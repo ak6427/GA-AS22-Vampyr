@@ -5,12 +5,9 @@ using UnityEngine.InputSystem;
 
 public class PlayerInput : MonoBehaviour
 {
-    // Serialized
-    [SerializeField] private new GameObject camera;
-
     // Private variables
-    private float movesSpeed = 10f;
-    private Vector2 moveInput, jumpInput;
+    private float moveSpeed = 10f;
+    private Vector2 moveInput, jumpInput, movement;
     private new Rigidbody2D rigidbody2D;
 
     // Public variables
@@ -42,13 +39,10 @@ public class PlayerInput : MonoBehaviour
 
     void PlayerMove()
     {
-        // Readability
-        Vector2 movement = Vector2.zero;
-
         // Check if grounded
         if(grounded)
         {
-            movement = moveInput * movesSpeed * Time.fixedDeltaTime;
+            movement = moveInput * moveSpeed * Time.fixedDeltaTime;
         }
 
         // Add movement to position
@@ -58,27 +52,20 @@ public class PlayerInput : MonoBehaviour
     void PlayerJump()
     {
         // Readability
-        Vector3 up = camera.GetComponent<Camera>().transform.up;
-        Vector3 upJumpInput = jumpInput.y * up;
-        Debug.Log("upJump: " + upJumpInput);
-        Vector3 jump = upJumpInput * movesSpeed * Time.fixedDeltaTime;
-        Debug.Log("jump: " + jump);
+        Vector2 upJumpInput = jumpInput.y * transform.up * moveSpeed * Time.fixedDeltaTime;
 
         // Jump
-        if (jump.y > 0f && grounded) {
-            rigidbody2D.AddForce(upJumpInput * movesSpeed, ForceMode2D.Impulse);
+        if (upJumpInput.y > 0f && grounded) 
+        {
+            rigidbody2D.AddForce(upJumpInput, ForceMode2D.Impulse);
+            Debug.Log("upJump: " + upJumpInput);
             Debug.Log("Adding to force");
         }
 
         // Set grounded
-        grounded = Mathf.Approximately(Mathf.Abs(rigidbody2D.velocity.y), 0f);//isGrounded();
+        grounded = Mathf.Approximately(Mathf.Abs(rigidbody2D.velocity.y), 0f);
         Debug.Log("yVelocity: " + Mathf.Abs(rigidbody2D.velocity.y));
     }
-
-    /*public bool isGrounded()
-    {
-        
-    }*/
 
     private void OnMove(InputAction.CallbackContext callBackContext)
     {
