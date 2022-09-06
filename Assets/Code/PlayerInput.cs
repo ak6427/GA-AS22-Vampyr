@@ -8,16 +8,18 @@ public class PlayerInput : MonoBehaviour
     // Private variables
     private Vector2 moveInput, jumpInput, dropInput, movement, movementXvector;
     private new Rigidbody2D rigidbody2D;
+    private CapsuleCollider2D capsuleCollider2D;
     private float movementX, movementY;
 
     // Public variables
-    public float moveSpeed = 10f, jumpForce = 5f;
+    public float moveSpeed = 10f, jumpForce = 5f, speedLimit = 5f;
     public bool grounded = false;
 
     void Awake()
     {
         // Get player rigidbody component
         rigidbody2D = GetComponent<Rigidbody2D>();
+        capsuleCollider2D = GetComponent<CapsuleCollider2D>();
     }
 
     // Start is called before the first frame update
@@ -34,6 +36,9 @@ public class PlayerInput : MonoBehaviour
         movementY = jumpInput.y * jumpForce;
         movement = new Vector2(movementX, movementY);
         movementXvector = new Vector2(movementX, 0f);
+
+        // X movement speed limit
+        rigidbody2D.velocity = new Vector2(Mathf.Clamp(rigidbody2D.velocity.x, -speedLimit, speedLimit), rigidbody2D.velocity.y);
     }
 
     void FixedUpdate()
@@ -54,7 +59,13 @@ public class PlayerInput : MonoBehaviour
     bool IsGrounded()
     {
         RaycastHit2D hit = Physics2D.Raycast(transform.position, -Vector2.up, 2);
-        return hit.collider != null && Mathf.Approximately(rigidbody2D.velocity.y, 0f);
+        bool ground = hit.collider != null && Mathf.Approximately(rigidbody2D.velocity.y, 0f);
+        return ground;
+    }
+
+    void TogglePlatformTriggerCollision(Collider2D collider, bool collisionSwitch)
+    {
+        collider.isTrigger = collisionSwitch;
     }
 
     // Return input action values
@@ -85,6 +96,12 @@ public class PlayerInput : MonoBehaviour
         // Check if grounded and set bool
         grounded = IsGrounded();
 
+        if(grounded && dropInput != Vector2.zero)
+        {
+            TogglePlatformTriggerCollision(collision.collider, true);
+            grounded = false;
+        }
+
         //Debug.Log("Stay: " + collision);
     }
 
@@ -92,7 +109,11 @@ public class PlayerInput : MonoBehaviour
     {
         // Set grounded to false up exiting collision
         grounded = false;
-
         //Debug.Log("Exit: " + collision);
+    }
+
+    private void OnTriggerExit2D(Collider2D collider)
+    {
+        TogglePlatformTriggerCollision(collider, false);
     }
 }
