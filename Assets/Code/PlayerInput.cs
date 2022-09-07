@@ -39,6 +39,11 @@ public class PlayerInput : MonoBehaviour
 
         // X movement speed limit
         rigidbody2D.velocity = new Vector2(Mathf.Clamp(rigidbody2D.velocity.x, -speedLimit, speedLimit), rigidbody2D.velocity.y);
+
+        if(rigidbody2D.velocity.y > 1f)
+        {
+            isRoofed();
+        }
     }
 
     void FixedUpdate()
@@ -56,16 +61,27 @@ public class PlayerInput : MonoBehaviour
         rigidbody2D.AddForce(movementXvector, ForceMode2D.Impulse);
     }
 
+    void isRoofed()
+    {
+        RaycastHit2D hit = Physics2D.CapsuleCast(transform.position, capsuleCollider2D.size, capsuleCollider2D.direction, 0f, Vector2.up);
+        bool roof = hit.collider != null;
+        bool isPlatform = roof && hit.collider.gameObject.tag == "Platform";
+        if (isPlatform)
+        {
+            TogglePlatformTriggerCollision(hit.collider, true);
+        }
+    }
+
     bool IsGrounded()
     {
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, -Vector2.up, 2);
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, -Vector2.up);
         bool ground = hit.collider != null && Mathf.Approximately(rigidbody2D.velocity.y, 0f);
         return ground;
     }
 
-    void TogglePlatformTriggerCollision(Collider2D collider, bool collisionSwitch)
+    void TogglePlatformTriggerCollision(Collider2D collider, bool triggerSwitch)
     {
-        collider.isTrigger = collisionSwitch;
+        collider.isTrigger = triggerSwitch;
     }
 
     // Return input action values
@@ -93,10 +109,12 @@ public class PlayerInput : MonoBehaviour
 
     private void OnCollisionStay2D(Collision2D collision)
     {
+        bool isPlatform = collision.gameObject.tag == "Platform";
         // Check if grounded and set bool
         grounded = IsGrounded();
 
-        if(grounded && dropInput != Vector2.zero)
+        // Drop through platform from above
+        if(grounded && dropInput != Vector2.zero && isPlatform)
         {
             TogglePlatformTriggerCollision(collision.collider, true);
             grounded = false;
