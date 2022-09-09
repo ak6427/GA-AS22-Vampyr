@@ -11,9 +11,8 @@ public class PlayerInput : MonoBehaviour
     private CapsuleCollider2D capsuleCollider2D;
     private float movementX, movementY;
 
-    // Public variables
-    public float moveSpeed = 10f, jumpForce = 5f, speedLimit = 5f;
-    public bool grounded = false;
+    [SerializeField] private float moveSpeed = 10f, jumpHeight = 4f, speedLimit = 5f;
+    [SerializeField] private bool grounded = false;
 
     void Awake()
     {
@@ -25,7 +24,6 @@ public class PlayerInput : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-
     }
 
     // Update is called once per frame
@@ -33,13 +31,18 @@ public class PlayerInput : MonoBehaviour
     {
         // Movement values
         movementX = moveInput.x * moveSpeed * Time.fixedDeltaTime;
-        movementY = jumpInput.y * jumpForce;
+        float m = rigidbody2D.mass;
+        float g = Mathf.Abs(Physics2D.gravity.y);
+        float t = Mathf.Sqrt(jumpInput.y * jumpHeight / (g * 0.5f));
+        float jumpForce = m * (g * t);
+        movementY = jumpForce;
         movement = new Vector2(movementX, movementY);
         movementXvector = new Vector2(movementX, 0f);
 
         // X movement speed limit
         rigidbody2D.velocity = new Vector2(Mathf.Clamp(rigidbody2D.velocity.x, -speedLimit, speedLimit), rigidbody2D.velocity.y);
 
+        // Check if anythings above
         if(rigidbody2D.velocity.y > 1f)
         {
             isRoofed();
@@ -63,7 +66,7 @@ public class PlayerInput : MonoBehaviour
 
     void isRoofed()
     {
-        RaycastHit2D hit = Physics2D.CapsuleCast(transform.position, capsuleCollider2D.size, capsuleCollider2D.direction, 0f, Vector2.up);
+        RaycastHit2D hit = Physics2D.CapsuleCast(transform.position, new Vector2(2f, 2f), capsuleCollider2D.direction, 0f, Vector2.up);
         bool roof = hit.collider != null;
         bool isPlatform = roof && hit.collider.gameObject.tag == "Platform";
         if (isPlatform)
